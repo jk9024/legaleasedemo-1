@@ -1,0 +1,25 @@
+{
+  "name": "LegalEase — India's Legal Consultation Marketplace",
+  "short_name": "LegalEase",
+  "description": "Consult verified High Court & District Court advocates online via Google Meet. Instant bookings, per-minute billing, and case tracking.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1F3A",
+  "theme_color": "#0B1F3A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "legal", "productivity"]
+}

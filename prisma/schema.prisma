@@ -1,0 +1,546 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// ENUMS
+// =====================================================
+
+enum Role {
+  CLIENT
+  LAWYER
+  STUDENT
+  ADMIN
+}
+
+enum ConsultationType {
+  VIDEO
+  INPERSON
+  PHONE
+  DOCUMENT
+  EMERGENCY
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum SubscriptionPlan {
+  NONE
+  LEGAL_SHIELD
+  FAMILY
+  BUSINESS
+}
+
+enum LawyerPlan {
+  FREE
+  PRO
+  ELITE
+  FIRM
+}
+
+enum PricingModel {
+  PER_HOUR
+  PER_MINUTE
+}
+
+// =====================================================
+// MODELS
+// =====================================================
+
+model User {
+  id                 String           @id @default(uuid())
+  name               String
+  email              String           @unique
+  emailVerified      DateTime?
+  phone              String?          @unique
+  phoneVerified      Boolean          @default(false)
+  password           String?
+  image              String?
+  role               Role             @default(CLIENT)
+  city               String?
+  state              String?
+  language           String           @default("English")
+  isActive           Boolean          @default(true)
+  lastLoginAt        DateTime?
+  subscriptionPlan   SubscriptionPlan @default(NONE)
+  subscriptionExpiry DateTime?
+  loyaltyPoints      Int              @default(0)
+  referralCode       String?          @unique
+  fcmToken           String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  lawyerProfile  Lawyer?
+  studentProfile Student?
+  clientBookings Booking[]        @relation("ClientBookings")
+  clientCases    Case[]           @relation("ClientCases")
+  documents      Document[]
+  reviewsGiven   Review[]         @relation("ReviewsGiven")
+  forumQuestions ForumQuestion[]
+  forumAnswers   ForumAnswer[]
+  subscription   Subscription?
+  notifications  Notification[]
+  newsArticles   NewsArticle[]
+  sentMessages   Message[]        @relation("SentMessages")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Lawyer {
+  id                   String       @id @default(uuid())
+  userId               String       @unique
+  barCouncilId         String       @unique
+  enrollmentYear       Int
+  specializations      String[]
+  experienceYears      Int          @default(0)
+  court                String
+  bio                  String       @db.Text
+  education            String
+  feePerHour           Int
+  feePerMinute         Int?
+  pricingModel         PricingModel @default(PER_HOUR)
+  minimumMinutes       Int          @default(15)
+  emergencyFee         Int          @default(1999)
+  consultationTypes    String[]
+  languages            String[]
+  isVerified           Boolean      @default(false)
+  isOnline             Boolean      @default(false)
+  isEmergencyAvailable Boolean      @default(false)
+  extensionAutoApprove Boolean      @default(false)
+  subscriptionPlan     LawyerPlan   @default(FREE)
+  rating               Float        @default(0)
+  reviewCount          Int          @default(0)
+  successRate          Float        @default(0)
+  responseTime         Float        @default(0)
+  totalEarnings        Int          @default(0)
+  totalConsultations   Int          @default(0)
+  profileViews         Int          @default(0)
+  availableDays        String[]
+  availableHours       Json?
+  blockedDates         DateTime[]
+  latitude             Float?
+  longitude            Float?
+  address              String?
+  referralCode         String       @unique
+  googleRefreshToken   String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  user               User            @relation(fields: [userId], references: [id])
+  bookings           Booking[]       @relation("LawyerBookings")
+  cases              Case[]          @relation("LawyerCases")
+  reviews            Review[]        @relation("LawyerReviews")
+  knowledgeBase      CaseKnowledge[]
+  referralsMade      Referral[]      @relation("ReferralsMade")
+  referralsReceived  Referral[]      @relation("ReferralsReceived")
+  supervisedStudents Student[]
+}
+
+model Student {
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  university          String
+  yearOfStudy         Int
+  graduationYear      Int
+  studentIdUrl        String?
+  specializations     String[]
+  feePerHour          Int          @default(149)
+  feePerMinute        Int?
+  pricingModel        PricingModel @default(PER_HOUR)
+  minimumMinutes      Int          @default(15)
+  languages           String[]
+  supervisingLawyerId String?
+  isVerified          Boolean      @default(false)
+  rating              Float        @default(0)
+  reviewCount         Int          @default(0)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user              User    @relation(fields: [userId], references: [id])
+  supervisingLawyer Lawyer? @relation(fields: [supervisingLawyerId], references: [id])
+  bookings          Booking[] @relation("StudentBookings")
+}
+
+model Booking {
+  id                    String           @id @default(uuid())
+  bookingReference      String           @unique
+  clientId              String
+  lawyerId              String?
+  studentId             String?
+  date                  DateTime
+  timeSlot              String
+  durationMinutes       Int              @default(60)
+  actualDurationSeconds Int?
+  consultationType      ConsultationType
+  pricingModel          PricingModel     @default(PER_HOUR)
+  status                BookingStatus    @default(PENDING)
+  fee                   Int
+  platformFee           Int
+  serviceCharge         Int              @default(19)
+  gst                   Int
+  totalAmount           Int
+  discount              Int              @default(0)
+  extensionAmount       Int              @default(0)
+  extensionCount        Int              @default(0)
+  preAuthorizedAmount   Int?
+  refundAmount          Int?
+  paymentStatus         PaymentStatus    @default(PENDING)
+  razorpayOrderId       String?
+  razorpayPaymentId     String?
+  issueDescription      String           @db.Text
+  issueCategory         String?
+  documentUrls          String[]
+  meetLink              String?
+  meetEventId           String?
+  recordingConsent      Boolean          @default(false)
+  recordingDriveUrl     String?
+  transcript            String?          @db.Text
+  isEmergency           Boolean          @default(false)
+  isEscrowReleased      Boolean          @default(false)
+  reminderSent          Boolean          @default(false)
+  invoiceUrl            String?
+  cancelReason          String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  client            User               @relation("ClientBookings", fields: [clientId], references: [id])
+  lawyer            Lawyer?            @relation("LawyerBookings", fields: [lawyerId], references: [id])
+  student           Student?           @relation("StudentBookings", fields: [studentId], references: [id])
+  case              Case?
+  review            Review?
+  callSummary       CallSummary?
+  sessionExtensions SessionExtension[]
+  messages          Message[]
+  notifications     Notification[]
+}
+
+model SessionExtension {
+  id                String    @id @default(uuid())
+  bookingId         String
+  extensionNumber   Int
+  minutes           Int
+  originalFee       Int
+  discountPercent   Int
+  discountedFee     Int
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  isPaid            Boolean   @default(false)
+  lawyerAccepted    Boolean   @default(false)
+  requestedAt       DateTime  @default(now())
+  acceptedAt        DateTime?
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+model CallSummary {
+  id                      String   @id @default(uuid())
+  bookingId               String   @unique
+  lawyerId                String?
+  clientId                String
+  issueDiscussed          String   @db.Text
+  keyFacts                String[]
+  adviceGiven             String   @db.Text
+  legalSectionsReferenced String[]
+  nextStepsForClient      String[]
+  followUpRecommended     Boolean  @default(false)
+  followUpTimeline        String?
+  durationMinutes         Int
+  aiGenerated             Boolean  @default(false)
+  pdfUrl                  String?
+  driveUrl                String?
+  isSharedWithClient      Boolean  @default(true)
+  createdAt               DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+model CaseKnowledge {
+  id                String   @id @default(uuid())
+  lawyerId          String
+  bookingId         String?  @unique
+  caseTitle         String
+  caseCategory      String
+  issueDescription  String   @db.Text
+  keyFacts          String[]
+  solutionSummary   String   @db.Text
+  legalSectionsUsed String[]
+  actsReferenced    String[]
+  outcome           String
+  resolutionMonths  Int?
+  complexity        String
+  courtName         String?
+  tags              String[]
+  isPrivate         Boolean  @default(true)
+  viewCount         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  lawyer Lawyer @relation(fields: [lawyerId], references: [id])
+}
+
+model Case {
+  id                 String       @id @default(uuid())
+  bookingId          String       @unique
+  clientId           String
+  lawyerId           String?
+  currentStage       Int          @default(0)
+  title              String
+  description        String       @db.Text
+  category           String?
+  predictedMinMonths Int?
+  predictedMaxMonths Int?
+  hearingDate        DateTime?
+  courtName          String?
+  caseNumber         String?
+  isActive           Boolean      @default(true)
+  resolvedAt         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  booking   Booking      @relation(fields: [bookingId], references: [id])
+  client    User         @relation("ClientCases", fields: [clientId], references: [id])
+  lawyer    Lawyer?      @relation("LawyerCases", fields: [lawyerId], references: [id])
+  updates   CaseUpdate[]
+  documents Document[]
+}
+
+model CaseUpdate {
+  id          String   @id @default(uuid())
+  caseId      String
+  stage       Int
+  stageName   String
+  notes       String   @db.Text
+  updatedById String
+  attachments String[]
+  createdAt   DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id])
+}
+
+model Document {
+  id                 String   @id @default(uuid())
+  caseId             String?
+  userId             String
+  fileName           String
+  fileUrl            String
+  cloudinaryPublicId String?
+  fileType           String
+  fileSize           Int
+  ocrText            String?  @db.Text
+  isSharedWithLawyer Boolean  @default(false)
+  category           String?
+  tags               String[]
+  uploadedAt         DateTime @default(now())
+
+  case Case? @relation(fields: [caseId], references: [id])
+  user User  @relation(fields: [userId], references: [id])
+}
+
+model Review {
+  id                String   @id @default(uuid())
+  bookingId         String   @unique
+  clientId          String
+  lawyerId          String?
+  rating            Int
+  reviewText        String   @db.Text
+  proofImageUrl     String?
+  isVerifiedBooking Boolean  @default(true)
+  lawyerResponse    String?  @db.Text
+  helpfulCount      Int      @default(0)
+  sentimentScore    Float?
+  createdAt         DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  client  User    @relation("ReviewsGiven", fields: [clientId], references: [id])
+  lawyer  Lawyer? @relation("LawyerReviews", fields: [lawyerId], references: [id])
+}
+
+model ForumQuestion {
+  id          String        @id @default(uuid())
+  userId      String
+  title       String
+  body        String        @db.Text
+  category    String
+  state       String?
+  tags        String[]
+  isAnonymous Boolean       @default(false)
+  views       Int           @default(0)
+  isResolved  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user    User          @relation(fields: [userId], references: [id])
+  answers ForumAnswer[]
+}
+
+model ForumAnswer {
+  id         String   @id @default(uuid())
+  questionId String
+  lawyerId   String
+  body       String   @db.Text
+  isPriority Boolean  @default(false)
+  isAccepted Boolean  @default(false)
+  upvotes    Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  question ForumQuestion @relation(fields: [questionId], references: [id])
+  lawyer   User          @relation(fields: [lawyerId], references: [id])
+}
+
+model Subscription {
+  id                 String           @id @default(uuid())
+  userId             String           @unique
+  plan               SubscriptionPlan
+  price              Int
+  startDate          DateTime
+  expiryDate         DateTime
+  consultationsUsed  Int              @default(0)
+  consultationsLimit Int
+  linkedMembers      String[]
+  isActive           Boolean          @default(true)
+  autoRenew          Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Template {
+  id            String   @id @default(uuid())
+  title         String
+  category      String
+  state         String
+  language      String   @default("English")
+  description   String   @db.Text
+  fileUrl       String
+  cloudinaryId  String?
+  isPremium     Boolean  @default(false)
+  price         Int      @default(0)
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+}
+
+model NewsArticle {
+  id          String    @id @default(uuid())
+  slug        String    @unique
+  title       String
+  body        String    @db.Text
+  summary     String
+  category    String
+  tags        String[]
+  authorId    String
+  thumbnail   String?
+  readTime    Int       @default(5)
+  isPublished Boolean   @default(false)
+  views       Int       @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author User @relation(fields: [authorId], references: [id])
+}
+
+model Referral {
+  id               String   @id @default(uuid())
+  referrerId       String
+  referredLawyerId String
+  clientId         String?
+  bookingId        String?
+  commissionAmount Int      @default(0)
+  isPaid           Boolean  @default(false)
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+
+  referrer       Lawyer @relation("ReferralsMade", fields: [referrerId], references: [id])
+  referredLawyer Lawyer @relation("ReferralsReceived", fields: [referredLawyerId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      String
+  bookingId String?
+  isRead    Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  bookingId String
+  senderId  String
+  body      String   @db.Text
+  isRead    Boolean  @default(false)
+  fileUrl   String?
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  sender  User    @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      String?
+  city      String?
+  phone     String?
+  createdAt DateTime @default(now())
+}

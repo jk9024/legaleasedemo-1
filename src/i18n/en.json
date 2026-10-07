@@ -1,0 +1,40 @@
+{
+  "brand": {
+    "name": "LegalEase",
+    "tagline": "India's Most Trusted Legal Consultation Marketplace"
+  },
+  "nav": {
+    "findLawyers": "Find Lawyers",
+    "categories": "Categories",
+    "pricing": "Subscriptions",
+    "emergency": "24/7 Emergency",
+    "forum": "Legal Forum",
+    "templates": "Document Vault",
+    "login": "Sign In",
+    "register": "Get Started",
+    "dashboard": "Client Dashboard",
+    "portal": "Lawyer Portal"
+  },
+  "hero": {
+    "title": "Clear Legal Advice, Direct from Verified Advocates",
+    "subtitle": "Consult top High Court & District Court advocates online via Google Meet. Transparent fees, per-minute billing, and Swiggy-style case tracking.",
+    "searchPlaceholder": "Ask anything (e.g. 'Neighbour built wall on my land in Kompally')...",
+    "ctaConsult": "Book Consultation",
+    "ctaEmergency": "Emergency Lawyer Now"
+  },
+  "booking": {
+    "step1": "Consultation Type",
+    "step2": "Select Slot",
+    "step3": "Case Details",
+    "step4": "Secure Escrow Payment",
+    "confirm": "Booking Confirmed"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "back": "Go Back",
+    "proceed": "Proceed",
+    "error": "Something went wrong"
+  }
+}
