@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -14,11 +14,12 @@ import {
   PhoneCall,
   X,
   Search,
+  Loader2,
 } from 'lucide-react'
 import { LawyerData } from '@/components/lawyers/LawyerCard'
 import { LawyerCompareTool } from '@/components/lawyers/LawyerCompareTool'
 
-export default function ComparePage() {
+function CompareContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -235,5 +236,19 @@ export default function ComparePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0B1F3A]" />
+        </div>
+      }
+    >
+      <CompareContent />
+    </Suspense>
   )
 }

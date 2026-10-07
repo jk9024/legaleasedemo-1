@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/redis'
 import { ApiResponse } from '@/types/api'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: {
     id: string

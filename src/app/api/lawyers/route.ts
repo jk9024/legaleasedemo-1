@@ -5,6 +5,8 @@ import { rateLimit } from '@/lib/redis'
 import { ApiResponse } from '@/types/api'
 import { LawyerData } from '@/components/lawyers/LawyerCard'
 
+export const dynamic = 'force-dynamic'
+
 const querySchema = z.object({
   search: z.string().optional(),
   category: z.string().optional(),

@@ -1,19 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect, useTransition, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Search,
   Sparkles,
   SlidersHorizontal,
   X,
-  ArrowUpDown,
-  BookOpen,
-  Clock,
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  Scale,
+  Loader2,
 } from 'lucide-react'
 import { LawyerFilter, FilterState } from '@/components/lawyers/LawyerFilter'
 import { LawyerGrid } from '@/components/lawyers/LawyerGrid'
@@ -45,7 +39,7 @@ const DEFAULT_FILTERS: FilterState = {
   verifiedOnly: false,
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -461,5 +455,19 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0B1F3A]" />
+        </div>
+      }
+    >
+      <SearchContent />
+    </Suspense>
   )
 }

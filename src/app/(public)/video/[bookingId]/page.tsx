@@ -485,7 +485,7 @@ export default function VideoConsultationRoom() {
             {activeTab === 'notes' && (
               <div className="flex-1 p-4 space-y-4 overflow-y-auto text-xs">
                 <div>
-                  <h4 className="font-bold text-white mb-1">Advocate's Shared Session Notes</h4>
+                  <h4 className="font-bold text-white mb-1">Advocate&apos;s Shared Session Notes</h4>
                   <p className="text-[11px] text-slate-400">
                     Live notes being taken by the advocate during this consultation.
                   </p>
@@ -572,7 +572,7 @@ export default function VideoConsultationRoom() {
                 {/* Advocate Advice */}
                 <div>
                   <h4 className="font-bold text-slate-300 uppercase text-[10px] tracking-wider">
-                    Advocate's Legal Advice
+                    Advocate&apos;s Legal Advice
                   </h4>
                   <p className="mt-1 text-slate-200 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-700">
                     {callSummary.adviceGiven}

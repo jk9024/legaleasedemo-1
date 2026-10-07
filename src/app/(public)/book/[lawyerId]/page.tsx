@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Loader2,
 } from 'lucide-react'
 import { calculateFees, FeeBreakdown } from '@/lib/utils/fees'
 import { formatINR, formatPhoneNumber } from '@/lib/utils/formatters'
@@ -52,7 +53,7 @@ interface ConfirmedBookingData {
   totalFee: number
 }
 
-export default function BookingPage() {
+function BookingWizard() {
   const params = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -1025,5 +1026,19 @@ export default function BookingPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0B1F3A]" />
+        </div>
+      }
+    >
+      <BookingWizard />
+    </Suspense>
   )
 }

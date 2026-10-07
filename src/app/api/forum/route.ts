@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { rateLimit } from '@/lib/redis'
 import { forumQuestionSchema } from '@/lib/utils/validators'
 import { ApiResponse } from '@/types/api'
+
+export const dynamic = 'force-dynamic'
 
 interface ForumQuestionItem {
   id: string
