@@ -172,6 +172,50 @@ function BookingWizard() {
     }
   }
 
+  // Helper to verify payment & finalize booking
+  const completeVerification = async (
+    bookingId: string,
+    bookingRef: string,
+    orderId: string,
+    paymentId: string,
+    signature: string,
+    scheduledDateTime: string
+  ) => {
+    const verifyRes = await fetch('/api/bookings/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId,
+        bookingRef,
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId,
+        razorpaySignature: signature,
+        clientName,
+        clientPhone: clientPhone.startsWith('+91') ? clientPhone : `+91${clientPhone}`,
+        clientEmail,
+        lawyerName: lawyer?.name || 'Adv. Priya Sharma',
+        scheduledAt: scheduledDateTime,
+        totalFee: feeBreakdown.total,
+      }),
+    })
+
+    const verifyData = await verifyRes.json()
+    if (!verifyData.success) {
+      throw new Error(verifyData.error || 'Payment signature verification failed')
+    }
+
+    setConfirmedBooking({
+      bookingId: verifyData.data.bookingId,
+      bookingRef: verifyData.data.bookingRef,
+      meetLink: verifyData.data.meetLink,
+      status: verifyData.data.status,
+      scheduledAt: scheduledDateTime,
+      totalFee: feeBreakdown.total,
+    })
+
+    setStep(5)
+  }
+
   // Handle Payment & Booking submission
   const handleCompletePayment = async () => {
     setIsProcessingPayment(true)
@@ -219,49 +263,98 @@ function BookingWizard() {
       })
 
       const orderData = await orderRes.json()
-      const orderId = orderData.data?.orderId || `order_${bookingRef}`
-
-      // 3. Verify Payment & Generate Google Meet Room (Escrow Lock)
-      const verifyRes = await fetch('/api/bookings/verify-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId,
-          bookingRef,
-          razorpayOrderId: orderId,
-          razorpayPaymentId: `pay_${Date.now()}`,
-          razorpaySignature: 'sig_mock_verified_signature_2025',
-          clientName,
-          clientPhone: clientPhone.startsWith('+91') ? clientPhone : `+91${clientPhone}`,
-          clientEmail,
-          lawyerName: lawyer?.name || 'Adv. Priya Sharma',
-          scheduledAt: scheduledDateTime,
-          totalFee: feeBreakdown.total,
-        }),
-      })
-
-      const verifyData = await verifyRes.json()
-      if (!verifyData.success) {
-        throw new Error(verifyData.error || 'Payment signature verification failed')
+      if (!orderData.success) {
+        throw new Error(orderData.error || 'Failed to initialize payment with gateway')
       }
 
-      // 4. Move to Success Step
-      setConfirmedBooking({
-        bookingId: verifyData.data.bookingId,
-        bookingRef: verifyData.data.bookingRef,
-        meetLink: verifyData.data.meetLink,
-        status: verifyData.data.status,
-        scheduledAt: scheduledDateTime,
-        totalFee: feeBreakdown.total,
-      })
+      const orderId = orderData.data?.orderId || `order_${bookingRef}`
+      const keyId = orderData.data?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
 
-      setStep(5)
+      // 3. If Razorpay SDK is loaded and we have real order, trigger Checkout modal
+      const isRazorpayAvailable = typeof window !== 'undefined' && Boolean((window as unknown as { Razorpay: unknown }).Razorpay)
+      const isRealOrder = !orderId.startsWith('demo_order_') && keyId && !keyId.includes('YOUR_KEY')
+
+      if (isRazorpayAvailable && isRealOrder) {
+        interface RazorpaySuccessResponse {
+          razorpay_payment_id: string
+          razorpay_order_id?: string
+          razorpay_signature?: string
+        }
+
+        const options = {
+          key: keyId,
+          amount: Math.round(feeBreakdown.total * 100),
+          currency: 'INR',
+          name: 'LegalEase India',
+          description: `Consultation with ${lawyer?.name || 'Advocate'} (100% Escrow)`,
+          image: '/icons/icon-192x192.png',
+          order_id: orderId,
+          prefill: {
+            name: clientName,
+            email: clientEmail,
+            contact: clientPhone.startsWith('+91') ? clientPhone : `+91${clientPhone}`,
+          },
+          notes: {
+            bookingRef,
+            lawyerId,
+            platform: 'LegalEase',
+          },
+          theme: {
+            color: '#0B1F3A',
+          },
+          handler: async function (response: RazorpaySuccessResponse) {
+            try {
+              await completeVerification(
+                bookingId,
+                bookingRef,
+                response.razorpay_order_id || orderId,
+                response.razorpay_payment_id,
+                response.razorpay_signature || 'sig_mock_verified_signature_2025',
+                scheduledDateTime
+              )
+            } catch (vErr) {
+              setPaymentError((vErr as Error).message || 'Payment verification failed.')
+              setIsProcessingPayment(false)
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setIsProcessingPayment(false)
+            },
+          },
+        }
+
+        type RazorpayInstance = {
+          open: () => void
+          on: (event: string, callback: (resp: { error?: { description?: string } }) => void) => void
+        }
+        const RazorpayConstructor = (window as unknown as { Razorpay: new (opts: typeof options) => RazorpayInstance }).Razorpay
+        const rzp = new RazorpayConstructor(options)
+
+        rzp.on('payment.failed', function (resp: { error?: { description?: string } }) {
+          console.error('[Razorpay] Payment failed on gateway:', resp.error)
+          setPaymentError(resp.error?.description || 'Payment was declined or failed on gateway.')
+          setIsProcessingPayment(false)
+        })
+
+        rzp.open()
+        return
+      }
+
+      // 4. Fallback simulation (when test keys are not loaded or in mock mode)
+      await completeVerification(
+        bookingId,
+        bookingRef,
+        orderId,
+        `pay_${Date.now()}`,
+        'sig_mock_verified_signature_2025',
+        scheduledDateTime
+      )
     } catch (err) {
       console.error('Booking payment error:', err)
       setPaymentError(
         err instanceof Error ? err.message : 'Payment could not be completed. Please retry.'
       )
-    } finally {
       setIsProcessingPayment(false)
     }
   }

@@ -7,6 +7,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister'
 import { GoogleAnalytics } from '@next/third-parties/google'
+import Script from 'next/script'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -76,6 +77,7 @@ export default function RootLayout({
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   )
