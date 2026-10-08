@@ -83,51 +83,75 @@ export const INDIAN_STATES = [
  */
 export const SUBSCRIPTION_PLANS = {
   FREE: {
-    name: 'Standard Pay-as-you-go',
+    name: 'Pay as you go',
     priceINR: 0,
     interval: 'forever',
     features: [
-      'Access to verified advocates & law students',
-      'Pay per consultation or per minute',
-      'Standard Google Meet video consultations',
-      '1GB Document Vault storage',
-      'Basic case status tracking'
-    ]
+      'Book any lawyer anytime',
+      'Per-package pricing',
+      'Case tracker',
+      'Basic document vault',
+    ],
   },
-  LEGAL_SHIELD: {
-    name: 'Legal Shield Personal',
-    priceINR: 499,
+  LEX_BASIC: {
+    name: 'LexBasic',
+    priceINR: 199,
     interval: 'month',
     features: [
-      '20% flat discount on all consultations',
-      '1 free 15-minute phone consultation monthly',
-      'Priority lawyer booking slots',
-      'Unlimited Document Vault with OCR search',
-      'WhatsApp real-time case updates'
-    ]
+      '1 free 30-min consultation/month',
+      '10% off all bookings',
+      'Priority customer support',
+      'All premium templates',
+      'Case tracker notifications',
+    ],
   },
-  FAMILY: {
-    name: 'Family Legal Care',
+  LEX_PLUS: {
+    name: 'LexPlus',
+    priceINR: 399,
+    interval: 'month',
+    features: [
+      '2 free 30-min consultations/month',
+      '20% off all bookings',
+      '4 family members covered',
+      'Document vault 5GB',
+      'WhatsApp case updates',
+      'Session extension priority',
+    ],
+  },
+  LEX_PRO: {
+    name: 'LexPro',
     priceINR: 999,
     interval: 'month',
     features: [
-      'Covers up to 4 family members',
-      '2 free 30-minute consultations monthly',
-      '20% discount on extended sessions',
-      'Free legal notice drafting review',
-      '24/7 emergency advocate helpline access'
-    ]
+      '4 free 45-min consultations/month',
+      '25% off all bookings',
+      'Document drafting included (2/month)',
+      'Dedicated legal manager',
+      'Business contract review',
+      'GST invoice generation',
+    ],
   },
-  BUSINESS: {
-    name: 'Startup & MSME Retainer',
-    priceINR: 2499,
+  LEX_ENTERPRISE: {
+    name: 'LexEnterprise',
+    priceINR: 2999,
     interval: 'month',
     features: [
-      'Dedicated corporate counsel match',
-      '5 free contract reviews per month',
-      '25% discount on all dispute filings',
-      'Custom legal document templates library',
-      'Dedicated relationship manager'
-    ]
-  }
+      'Unlimited consultations',
+      '30% off all bookings',
+      '50 employee accounts',
+      'Dedicated account manager',
+      'Corporate GST invoice',
+      'HR analytics dashboard',
+    ],
+  },
+  get LEGAL_SHIELD() {
+    return this.LEX_BASIC
+  },
+  get FAMILY() {
+    return this.LEX_PLUS
+  },
+  get BUSINESS() {
+    return this.LEX_PRO
+  },
 } as const
+

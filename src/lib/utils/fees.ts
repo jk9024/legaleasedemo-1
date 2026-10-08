@@ -1,25 +1,21 @@
 /**
  * Fee breakdown and platform commission calculation utility.
- * Exact logic specified in AGENTS.md lines 788-829.
- *
- * Commission tiers:
- * - Law Student: 15%
- * - Lawyer (< ₹599): 12%
- * - Lawyer (₹599 - ₹1500): 10%
- * - Lawyer (> ₹1500): 8%
- *
- * Discounts:
- * - 20% discount on lawyer fee for subscribers (LEGAL_SHIELD, FAMILY, BUSINESS)
- * - Platform fee applies on discounted fee
- * - Fixed service charge: ₹19
- * - GST: 18% on (Platform Fee + Service Charge)
+ * Backed by the updated revenue model in src/lib/utils/pricing.ts.
  */
 
+import { calculateFees as calcNewFees, FeeBreakdown as PricingFeeBreakdown } from './pricing'
+
 export interface FeeBreakdown {
+  packagePrice: number      // what client pays for package
+  platformCut: number       // platform's share
+  lawyerEarns: number       // lawyer's share
+  serviceCharge: number     // flat Rs.19
+  gst: number               // 18% on platform cut + service
+  totalClientPays: number   // final amount
+  commissionPercent: number
+  // Legacy aliases for backward compatibility
   lawyerFee: number
   platformFee: number
-  serviceCharge: number
-  gst: number
   total: number
   discount: number
   platformPercent: number
@@ -27,43 +23,49 @@ export interface FeeBreakdown {
 
 /**
  * Calculates itemized billing breakdown for any consultation booking.
- * @param lawyerFee - Base fee quoted by the lawyer
- * @param lawyerType - 'lawyer' or 'student'
- * @param userPlan - User subscription plan ('FREE', 'LEGAL_SHIELD', 'FAMILY', 'BUSINESS')
+ * Supports both new signature (ratePerMinute, packageMinutes, lawyerTier, clientPlan)
+ * and legacy calls (fee, type, plan).
+ *
+ * @param rateOrFee - Rate per minute (new) or base fee (legacy)
+ * @param minutesOrType - Package duration in minutes (new) or lawyer type ('lawyer' | 'student')
+ * @param tierOrPlan - Lawyer tier ('student'|'standard'|'experienced'|'senior') or user plan
+ * @param clientPlan - Client subscription plan ('NONE' | 'LEX_BASIC' | 'LEX_PLUS' | 'LEX_PRO' | 'LEX_ENTERPRISE')
  * @returns Complete FeeBreakdown object with taxes and net total
  */
 export function calculateFees(
-  lawyerFee: number,
-  lawyerType: 'lawyer' | 'student',
-  userPlan: string = 'FREE'
+  rateOrFee: number,
+  minutesOrType: number | string = 30,
+  tierOrPlan: string = 'standard',
+  clientPlan: string = 'NONE'
 ): FeeBreakdown {
-  let platformPercent: number
-  if (lawyerType === 'student') platformPercent = 15
-  else if (lawyerFee < 599) platformPercent = 12
-  else if (lawyerFee <= 1500) platformPercent = 10
-  else platformPercent = 8
+  let ratePerMinute: number
+  let packageMinutes: number
+  let lawyerTier: string
+  let plan: string
 
-  let discount = 0
-  const discountPlans = ['LEGAL_SHIELD', 'FAMILY', 'BUSINESS']
-  let effectiveLawyerFee = lawyerFee
-
-  if (discountPlans.includes(userPlan)) {
-    discount = Math.round(lawyerFee * 0.20)
-    effectiveLawyerFee = lawyerFee - discount
+  if (typeof minutesOrType === 'number') {
+    // New signature: ratePerMinute, packageMinutes, lawyerTier, clientPlan
+    ratePerMinute = rateOrFee
+    packageMinutes = minutesOrType
+    lawyerTier = tierOrPlan || 'standard'
+    plan = clientPlan || 'NONE'
+  } else {
+    // Legacy signature: lawyerFee, lawyerType ('lawyer'|'student'), userPlan
+    // Convert hourly/flat fee to equivalent rate per minute
+    packageMinutes = 30
+    ratePerMinute = Math.max(2, Math.round(rateOrFee / 60))
+    lawyerTier = minutesOrType === 'student' ? 'student' : 'standard'
+    plan = tierOrPlan.startsWith('LEX_') ? tierOrPlan : tierOrPlan === 'LEGAL_SHIELD' ? 'LEX_BASIC' : 'NONE'
   }
 
-  const platformFee = Math.round(effectiveLawyerFee * (platformPercent / 100))
-  const serviceCharge = 19
-  const gst = Math.round((platformFee + serviceCharge) * 0.18)
-  const total = effectiveLawyerFee + platformFee + serviceCharge + gst
+  const result = calcNewFees(ratePerMinute, packageMinutes, lawyerTier, plan)
 
   return {
-    lawyerFee: effectiveLawyerFee,
-    platformFee,
-    serviceCharge,
-    gst,
-    total,
-    discount,
-    platformPercent
+    ...result,
+    lawyerFee: result.lawyerEarns,
+    platformFee: result.platformCut,
+    total: result.totalClientPays,
+    discount: 0,
+    platformPercent: result.commissionPercent,
   }
 }

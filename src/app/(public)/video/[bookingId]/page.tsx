@@ -25,9 +25,9 @@ import {
   Download,
   Star,
 } from 'lucide-react'
-import { calcExtensionFee, ExtensionFeeResult } from '@/lib/utils/session-extension'
 import { formatINR, formatDuration } from '@/lib/utils/formatters'
 import { SummaryData } from '@/lib/utils/call-summary'
+import SessionTimer from '@/components/session/SessionTimer'
 
 interface BookingInfo {
   id: string
@@ -65,12 +65,6 @@ export default function VideoConsultationRoom() {
   const [isVideoOn, setIsVideoOn] = useState<boolean>(true)
   const [isScreenSharing, setIsScreenSharing] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'chat' | 'notes' | 'docs'>('chat')
-
-  // Timer & Extensions
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState<number>(30 * 60)
-  const [extensionCount, setExtensionCount] = useState<number>(0)
-  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState<boolean>(false)
-  const [extensionSuccess, setExtensionSuccess] = useState<string>('')
 
   // In-Call Chat
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
@@ -110,7 +104,6 @@ export default function VideoConsultationRoom() {
         const json = await res.json()
         if (json.success && json.data && isMounted) {
           setBooking(json.data)
-          setTimeLeftSeconds(json.data.durationMinutes * 60 || 30 * 60)
         }
       } catch (err) {
         console.error('Failed to load booking:', err)
@@ -124,28 +117,6 @@ export default function VideoConsultationRoom() {
       isMounted = false
     }
   }, [bookingId])
-
-  // Countdown Timer
-  useEffect(() => {
-    if (isConcluded) return
-
-    const timer = setInterval(() => {
-      setTimeLeftSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          handleConcludeCall()
-          return 0
-        }
-        // Auto-trigger extension modal at 5 mins remaining
-        if (prev === 300 && extensionCount === 0) {
-          setIsExtensionModalOpen(true)
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isConcluded, extensionCount])
 
   // Send Chat Message
   const handleSendMessage = (e: React.FormEvent) => {
@@ -180,23 +151,6 @@ export default function VideoConsultationRoom() {
     }, 2000)
   }
 
-  // Handle Extension Request (33% or 20% discount)
-  const handleApplyExtension = (mins: number) => {
-    const nextExtNumber = extensionCount + 1
-    const extFee = calcExtensionFee(599, mins, nextExtNumber)
-
-    setTimeLeftSeconds((prev) => prev + mins * 60)
-    setExtensionCount(nextExtNumber)
-    setExtensionSuccess(
-      `Extended by +${mins} minutes! Saved ${extFee.discountPct}% (${formatINR(extFee.saving)}) loyalty discount.`
-    )
-
-    setTimeout(() => {
-      setIsExtensionModalOpen(false)
-      setExtensionSuccess('')
-    }, 2000)
-  }
-
   // Handle Conclude Call & Generate AI Summary
   const handleConcludeCall = async () => {
     setIsConcluded(true)
@@ -223,10 +177,6 @@ export default function VideoConsultationRoom() {
       setIsGeneratingSummary(false)
     }
   }
-
-  // Current extension calculation preview
-  const ext15 = calcExtensionFee(599, 15, extensionCount + 1)
-  const ext30 = calcExtensionFee(599, 30, extensionCount + 1)
 
   return (
     <div className="min-h-screen bg-[#071322] text-white flex flex-col justify-between">
@@ -259,30 +209,16 @@ export default function VideoConsultationRoom() {
             </div>
           </div>
 
-          {/* Central Countdown Timer */}
+          {/* Central Session Timer */}
           <div className="flex items-center gap-3">
-            <div
-              className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-xs font-mono font-bold transition border ${
-                timeLeftSeconds < 300
-                  ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse'
-                  : 'bg-white/10 border-white/10 text-white'
-              }`}
-            >
-              <Clock className="h-4 w-4 text-[#C9A84C]" />
-              <span className="text-sm font-extrabold">{formatDuration(timeLeftSeconds)}</span>
-            </div>
-
-            {/* Extend Button */}
-            {!isConcluded && (
-              <button
-                type="button"
-                onClick={() => setIsExtensionModalOpen(true)}
-                className="hidden sm:flex items-center gap-1 rounded-xl bg-[#C9A84C]/20 border border-[#C9A84C]/40 px-3 py-1.5 text-xs font-bold text-[#C9A84C] hover:bg-[#C9A84C]/30 transition"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Extend ({extensionCount === 0 ? '33% Off' : '20% Off'})</span>
-              </button>
-            )}
+            <SessionTimer
+              bookingId={bookingId}
+              packageMinutes={booking?.durationMinutes || 30}
+              ratePerMinute={11}
+              lawyerName={booking?.lawyerName || 'Adv. Priya Sharma'}
+              isEmergency={booking?.consultationType === 'EMERGENCY'}
+              onSessionConcluded={handleConcludeCall}
+            />
           </div>
 
           {/* Right Controls: Escrow Status & Meet Outbound */}
@@ -642,83 +578,6 @@ export default function VideoConsultationRoom() {
             </div>
           </div>
         </main>
-      )}
-
-      {/* Extension Modal */}
-      {isExtensionModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-700 p-6 shadow-2xl text-white space-y-5">
-            <button
-              type="button"
-              onClick={() => setIsExtensionModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div>
-              <span className="rounded-full bg-[#C9A84C]/20 border border-[#C9A84C]/40 px-3 py-1 text-[10px] font-bold text-[#C9A84C]">
-                Loyalty Discount Active
-              </span>
-              <h3 className="font-hero text-lg font-bold mt-2">Extend Your Consultation</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Need more time with {booking?.lawyerName || 'Adv. Priya Sharma'}? Choose an extension with automatic tiered discount.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {/* 15 Mins Option */}
-              <button
-                type="button"
-                onClick={() => handleApplyExtension(15)}
-                className="rounded-2xl border border-slate-700 bg-slate-800/80 p-4 text-left hover:border-[#C9A84C] hover:bg-slate-800 transition"
-              >
-                <p className="font-bold text-sm">+15 Minutes</p>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-extrabold text-base text-white">
-                    {formatINR(ext15.discountedFee)}
-                  </span>
-                  <span className="text-[10px] text-slate-400 line-through">
-                    {formatINR(ext15.originalFee)}
-                  </span>
-                </div>
-                <span className="mt-2 inline-block rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5">
-                  Save {ext15.discountPct}%
-                </span>
-              </button>
-
-              {/* 30 Mins Option */}
-              <button
-                type="button"
-                onClick={() => handleApplyExtension(30)}
-                className="rounded-2xl border border-slate-700 bg-slate-800/80 p-4 text-left hover:border-[#C9A84C] hover:bg-slate-800 transition"
-              >
-                <p className="font-bold text-sm">+30 Minutes</p>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-extrabold text-base text-white">
-                    {formatINR(ext30.discountedFee)}
-                  </span>
-                  <span className="text-[10px] text-slate-400 line-through">
-                    {formatINR(ext30.originalFee)}
-                  </span>
-                </div>
-                <span className="mt-2 inline-block rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5">
-                  Save {ext30.discountPct}%
-                </span>
-              </button>
-            </div>
-
-            {extensionSuccess && (
-              <p className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 text-center">
-                {extensionSuccess}
-              </p>
-            )}
-
-            <p className="text-[10px] text-slate-500 text-center">
-              Additional fee is authorized directly via existing Razorpay escrow.
-            </p>
-          </div>
-        </div>
       )}
     </div>
   )

@@ -167,12 +167,16 @@ export function LawyerCard({
       {/* Footer: Pricing & Action Buttons */}
       <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
         <div>
-          <p className="text-[10px] text-slate-400 uppercase font-semibold">Consultation Fee</p>
-          <p className="text-base font-extrabold text-[#0B1F3A]">
-            {formatINR(lawyer.hourlyFee)}
-            <span className="text-xs font-normal text-slate-500"> / hr</span>
+          <p className="text-[10px] text-[#0D7A55] font-semibold">
+            From {formatINR((lawyer.perMinuteFee || Math.round(lawyer.hourlyFee / 60) || 10) * 30)} for 30 min
           </p>
-          <p className="text-[10px] text-[#0D7A55] font-medium">or {formatINR(lawyer.perMinuteFee)}/min</p>
+          <p className="text-base font-extrabold text-[#0B1F3A]">
+            {formatINR(lawyer.perMinuteFee || Math.round(lawyer.hourlyFee / 60) || 10)}
+            <span className="text-xs font-semibold text-slate-600">/min</span>
+          </p>
+          <p className="text-[11px] text-slate-400">
+            ({formatINR(lawyer.hourlyFee || (lawyer.perMinuteFee || 10) * 60)}/hr)
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

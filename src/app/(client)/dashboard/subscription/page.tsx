@@ -13,13 +13,13 @@ export default function SubscriptionPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="font-hero text-2xl font-bold text-[#0B1F3A]">Legal Shield Subscriptions</h1>
+          <h1 className="font-hero text-2xl font-bold text-[#0B1F3A]">LexPlus Subscriptions</h1>
           <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700 border border-amber-200">
             Active Member
           </span>
         </div>
         <p className="text-xs text-slate-500 mt-1">
-          Enjoy 20% flat consultation discounts, emergency advocate access, and free document reviews.
+          Enjoy 20% flat consultation discounts, 2 free 30-min consultations, and session extension priority.
         </p>
       </div>
 
@@ -31,9 +31,9 @@ export default function SubscriptionPage() {
               <Award className="h-4 w-4" />
               <span>Current Subscription</span>
             </div>
-            <h2 className="text-2xl font-bold">{SUBSCRIPTION_PLANS.LEGAL_SHIELD.name}</h2>
+            <h2 className="text-2xl font-bold">{SUBSCRIPTION_PLANS.LEX_PLUS.name}</h2>
             <p className="text-xs text-slate-300 mt-1">
-              Renews automatically on 24 November 2025 • {formatINR(SUBSCRIPTION_PLANS.LEGAL_SHIELD.priceINR)} / month
+              Renews automatically on 24 November 2025 • {formatINR(SUBSCRIPTION_PLANS.LEX_PLUS.priceINR)} / month
             </p>
 
             <div className="mt-4 flex flex-wrap gap-4 text-xs">
@@ -56,10 +56,10 @@ export default function SubscriptionPage() {
               Cancel or Pause
             </button>
             <button
-              onClick={() => alert('Upgraded to Family Legal Care via Razorpay')}
+              onClick={() => alert('Upgraded to LexPro via Razorpay')}
               className="rounded-xl bg-[#C9A84C] px-5 py-2.5 text-xs font-bold text-[#0B1F3A] hover:bg-[#d8b85c] transition"
             >
-              Upgrade to Family Care
+              Upgrade to LexPro
             </button>
           </div>
         </div>
@@ -90,20 +90,46 @@ export default function SubscriptionPage() {
           </button>
         </div>
 
-        {/* Plan 2: Legal Shield (Current) */}
+        {/* Plan 2: LexBasic */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 className="text-base font-bold text-[#0B1F3A]">{SUBSCRIPTION_PLANS.LEX_BASIC.name}</h3>
+            <p className="text-xs text-slate-500 mt-1">For individual personal legal advice</p>
+            <p className="text-2xl font-extrabold text-[#0B1F3A] mt-4">
+              {formatINR(SUBSCRIPTION_PLANS.LEX_BASIC.priceINR)}
+              <span className="text-xs font-normal text-slate-500"> / month</span>
+            </p>
+            <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
+              {SUBSCRIPTION_PLANS.LEX_BASIC.features.map((feat, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-[#0D7A55] shrink-0 mt-0.5" />
+                  <span className="font-medium text-slate-800">{feat}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <button
+            onClick={() => alert('Switched to LexBasic')}
+            className="mt-6 w-full rounded-lg bg-slate-100 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+          >
+            Select LexBasic
+          </button>
+        </div>
+
+        {/* Plan 3: LexPlus (Active) */}
         <div className="rounded-2xl border-2 border-[#0B1F3A] bg-white p-6 shadow-lg flex flex-col justify-between relative">
           <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0B1F3A] px-3 py-0.5 text-[10px] font-bold text-[#C9A84C]">
             ACTIVE PLAN
           </span>
           <div>
-            <h3 className="text-base font-bold text-[#0B1F3A]">{SUBSCRIPTION_PLANS.LEGAL_SHIELD.name}</h3>
-            <p className="text-xs text-slate-500 mt-1">For individuals and property owners</p>
+            <h3 className="text-base font-bold text-[#0B1F3A]">{SUBSCRIPTION_PLANS.LEX_PLUS.name}</h3>
+            <p className="text-xs text-slate-500 mt-1">Covers 4 family members with priority</p>
             <p className="text-2xl font-extrabold text-[#0B1F3A] mt-4">
-              {formatINR(SUBSCRIPTION_PLANS.LEGAL_SHIELD.priceINR)}
+              {formatINR(SUBSCRIPTION_PLANS.LEX_PLUS.priceINR)}
               <span className="text-xs font-normal text-slate-500"> / month</span>
             </p>
             <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-              {SUBSCRIPTION_PLANS.LEGAL_SHIELD.features.map((feat, i) => (
+              {SUBSCRIPTION_PLANS.LEX_PLUS.features.map((feat, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <Check className="h-4 w-4 text-[#0D7A55] shrink-0 mt-0.5" />
                   <span className="font-medium text-slate-800">{feat}</span>
@@ -114,32 +140,6 @@ export default function SubscriptionPage() {
           <div className="mt-6 rounded-lg bg-emerald-50 py-2 text-center text-xs font-semibold text-[#0D7A55] border border-emerald-200">
             Currently Active
           </div>
-        </div>
-
-        {/* Plan 3: Family Legal Care */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <h3 className="text-base font-bold text-[#0B1F3A]">{SUBSCRIPTION_PLANS.FAMILY.name}</h3>
-            <p className="text-xs text-slate-500 mt-1">Covers 4 family members with priority</p>
-            <p className="text-2xl font-extrabold text-[#0B1F3A] mt-4">
-              {formatINR(SUBSCRIPTION_PLANS.FAMILY.priceINR)}
-              <span className="text-xs font-normal text-slate-500"> / month</span>
-            </p>
-            <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-              {SUBSCRIPTION_PLANS.FAMILY.features.map((feat, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-[#0D7A55] shrink-0 mt-0.5" />
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <button
-            onClick={() => alert('Initiating Razorpay subscription checkout for Family Legal Care')}
-            className="mt-6 w-full rounded-lg bg-[#0B1F3A] py-2.5 text-xs font-bold text-white hover:bg-[#1a3a6b] transition"
-          >
-            Upgrade Plan
-          </button>
         </div>
       </div>
     </div>

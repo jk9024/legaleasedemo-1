@@ -41,18 +41,27 @@ enum PaymentStatus {
   FAILED
 }
 
-enum SubscriptionPlan {
+enum BookingPackage {
+  MIN_15
+  MIN_20
+  MIN_30
+  MIN_45
+  MIN_60
+}
+
+enum ClientSubscriptionPlan {
   NONE
-  LEGAL_SHIELD
-  FAMILY
-  BUSINESS
+  LEX_BASIC
+  LEX_PLUS
+  LEX_PRO
+  LEX_ENTERPRISE
 }
 
 enum LawyerPlan {
   FREE
+  STARTER
   PRO
   ELITE
-  FIRM
 }
 
 enum PricingModel {
@@ -79,7 +88,7 @@ model User {
   language           String           @default("English")
   isActive           Boolean          @default(true)
   lastLoginAt        DateTime?
-  subscriptionPlan   SubscriptionPlan @default(NONE)
+  subscriptionPlan   ClientSubscriptionPlan @default(NONE)
   subscriptionExpiry DateTime?
   loyaltyPoints      Int              @default(0)
   referralCode       String?          @unique
@@ -149,10 +158,10 @@ model Lawyer {
   court                String
   bio                  String       @db.Text
   education            String
-  feePerHour           Int
-  feePerMinute         Int?
-  pricingModel         PricingModel @default(PER_HOUR)
-  minimumMinutes       Int          @default(15)
+  ratePerMinute        Int          // base rate per minute
+  feePerHour           Int          // computed: ratePerMinute × 60
+  lawyerTier           String       @default("standard")
+  // tiers: student | standard | experienced | senior
   emergencyFee         Int          @default(1999)
   consultationTypes    String[]
   languages            String[]
@@ -249,6 +258,13 @@ model Booking {
   recordingDriveUrl     String?
   transcript            String?          @db.Text
   isEmergency           Boolean          @default(false)
+  packageType           BookingPackage   @default(MIN_30)
+  packageMinutes        Int              @default(30)
+  packagePrice          Int              @default(0)
+  extensionDiscounts    Json?
+  totalMinutesUsed      Int              @default(0)
+  sessionStartedAt      DateTime?
+  sessionActive         Boolean          @default(false)
   isEscrowReleased      Boolean          @default(false)
   reminderSent          Boolean          @default(false)
   invoiceUrl            String?
@@ -268,21 +284,30 @@ model Booking {
 }
 
 model SessionExtension {
-  id                String    @id @default(uuid())
-  bookingId         String
-  extensionNumber   Int
-  minutes           Int
-  originalFee       Int
-  discountPercent   Int
-  discountedFee     Int
-  razorpayOrderId   String?
-  razorpayPaymentId String?
-  isPaid            Boolean   @default(false)
-  lawyerAccepted    Boolean   @default(false)
-  requestedAt       DateTime  @default(now())
-  acceptedAt        DateTime?
+  id                  String   @id @default(uuid())
+  bookingId           String
+  extensionNumber     Int      // 1, 2, 3 — tracks which attempt
+  requestedMinutes    Int      // 15, 30, 45, or 60
+  originalFee         Int      // what it costs at full rate
+  discountPercent     Int      // 15, 30, 40, or 50 (1st extension)
+                               // 7, 15, 20, 25 (2nd extension)
+                               // 0 (3rd extension — no discount)
+  discountedFee       Int      // what client actually pays
+  platformCut         Int      // 20% of discountedFee
+  lawyerEarns         Int      // 80% of discountedFee
+  saving              Int      // originalFee - discountedFee
+  razorpayOrderId     String?
+  razorpayPaymentId   String?
+  isPaid              Boolean  @default(false)
+  lawyerAvailable     Boolean  @default(false)
+  lawyerConfirmedAt   DateTime?
+  promptShownAt       DateTime?  // when 5-min warning showed
+  promptExpiredAt     DateTime?  // 2 min after shown
+  clientRespondedAt   DateTime?
+  wasAutoExpired      Boolean  @default(false)
+  createdAt           DateTime @default(now())
 
-  booking Booking @relation(fields: [bookingId], references: [id])
+  booking             Booking  @relation(fields: [bookingId], references: [id])
 }
 
 model CallSummary {
@@ -441,9 +466,9 @@ model ForumAnswer {
 }
 
 model Subscription {
-  id                 String           @id @default(uuid())
-  userId             String           @unique
-  plan               SubscriptionPlan
+  id                 String                 @id @default(uuid())
+  userId             String                 @unique
+  plan               ClientSubscriptionPlan
   price              Int
   startDate          DateTime
   expiryDate         DateTime

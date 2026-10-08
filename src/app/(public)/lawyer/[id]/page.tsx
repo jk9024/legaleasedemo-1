@@ -76,7 +76,7 @@ export default function LawyerProfilePage() {
 
   const [lawyer, setLawyer] = useState<LawyerProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedType, setSelectedType] = useState<'30min' | '60min' | 'perMinute'>('30min')
+  const [selectedType, setSelectedType] = useState<'30min' | '60min'>('30min')
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedSlot, setSelectedSlot] = useState<string>('11:30 AM')
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
@@ -249,11 +249,12 @@ export default function LawyerProfilePage() {
     knowsAbout: lawyer.specializations,
   }
 
-  // Consultation price calculation
+  // Consultation price calculation (at start: 30 mins or 1 hour; extension available later)
   const getSelectedPrice = () => {
-    if (selectedType === '30min') return Math.round(lawyer.hourlyFee * 0.6)
-    if (selectedType === '60min') return lawyer.hourlyFee
-    return lawyer.perMinuteFee * 15
+    if (!lawyer) return 330
+    const rate = lawyer.perMinuteFee || Math.round(lawyer.hourlyFee / 60) || 11
+    if (selectedType === '60min') return rate * 60
+    return rate * 30
   }
 
   return (
@@ -537,55 +538,57 @@ export default function LawyerProfilePage() {
           <div className="lg:col-span-1">
             <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-md space-y-6">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Select Consultation Type
-                </span>
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Consultation Package
+                  </span>
+                  <span className="text-xs font-bold text-[#0D7A55]">
+                    Rs.{lawyer.perMinuteFee || Math.round(lawyer.hourlyFee / 60) || 11}/min{' '}
+                    <span className="text-[10px] font-normal text-slate-500">
+                      ({formatINR(lawyer.hourlyFee || (lawyer.perMinuteFee || 11) * 60)}/hr)
+                    </span>
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setSelectedType('30min')}
-                    className={`rounded-xl p-2.5 text-center transition border ${
+                    className={`rounded-xl p-3 text-center transition border relative ${
                       selectedType === '30min'
-                        ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white shadow-xs'
+                        ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white shadow-md ring-2 ring-[#C9A84C]'
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded bg-[#C9A84C] px-2 py-0.5 text-[8px] font-extrabold text-[#0B1F3A]">
+                      POPULAR
+                    </span>
                     <p className="text-xs font-bold">30 Mins</p>
-                    <p className="text-[10px] mt-0.5 opacity-90">
-                      {formatINR(Math.round(lawyer.hourlyFee * 0.6))}
+                    <p className={`text-xs mt-1 font-extrabold ${selectedType === '30min' ? 'text-[#C9A84C]' : 'text-[#0D7A55]'}`}>
+                      {formatINR((lawyer.perMinuteFee || Math.round(lawyer.hourlyFee / 60) || 11) * 30)}
                     </p>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setSelectedType('60min')}
-                    className={`rounded-xl p-2.5 text-center transition border ${
+                    className={`rounded-xl p-3 text-center transition border relative ${
                       selectedType === '60min'
-                        ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white shadow-xs'
+                        ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white shadow-md ring-2 ring-[#C9A84C]'
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <p className="text-xs font-bold">60 Mins</p>
-                    <p className="text-[10px] mt-0.5 opacity-90">
-                      {formatINR(lawyer.hourlyFee)}
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedType('perMinute')}
-                    className={`rounded-xl p-2.5 text-center transition border ${
-                      selectedType === 'perMinute'
-                        ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <p className="text-xs font-bold">Per Min</p>
-                    <p className="text-[10px] mt-0.5 opacity-90">
-                      {formatINR(lawyer.perMinuteFee)}/m
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded bg-emerald-600 px-2 py-0.5 text-[8px] font-extrabold text-white">
+                      BEST VALUE
+                    </span>
+                    <p className="text-xs font-bold">1 Hour</p>
+                    <p className={`text-xs mt-1 font-extrabold ${selectedType === '60min' ? 'text-[#C9A84C]' : 'text-[#0D7A55]'}`}>
+                      {formatINR((lawyer.perMinuteFee || Math.round(lawyer.hourlyFee / 60) || 11) * 60)}
                     </p>
                   </button>
                 </div>
+                <p className="text-[10px] text-slate-500 mt-2 text-center">
+                  ⏱️ Need more time? Live in-call extensions (+15, +30, +45, +60 min) available later.
+                </p>
               </div>
 
               {/* Features included */}

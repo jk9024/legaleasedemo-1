@@ -62,28 +62,22 @@ export async function POST(req: NextRequest) {
     const bookingRef = generateBookingRef()
 
     // 1. Calculate pricing
-    let baseFee = 599
-    if (data.durationMinutes === 60) baseFee = 999
-    else if (data.durationMinutes === 15) baseFee = 299
-
+    let ratePerMinute = 10
+    let lawyerTier = 'standard'
     try {
       const lawyer = await prisma.lawyer.findFirst({
         where: { OR: [{ id: data.lawyerId }, { barCouncilId: data.lawyerId }] },
       })
       if (lawyer) {
-        if (data.pricingModel === 'PER_MINUTE' && lawyer.feePerMinute) {
-          baseFee = lawyer.feePerMinute * data.durationMinutes
-        } else if (data.durationMinutes === 60) {
-          baseFee = lawyer.feePerHour
-        } else {
-          baseFee = Math.round(lawyer.feePerHour * 0.6)
-        }
+        ratePerMinute = lawyer.ratePerMinute || Math.round(lawyer.feePerHour / 60) || 10
+        lawyerTier = lawyer.lawyerTier || 'standard'
       }
     } catch {
       // Fallback
     }
 
-    const feeBreakdown = calculateFees(baseFee, 'lawyer', data.userPlan)
+    const packageMinutes = data.durationMinutes || 30
+    const feeBreakdown = calculateFees(ratePerMinute, packageMinutes, lawyerTier, data.userPlan || 'NONE')
     const bookingId = `book-${Date.now()}`
 
     // 2. Persist to DB if available
@@ -130,6 +124,11 @@ export async function POST(req: NextRequest) {
             date: new Date(data.scheduledAt),
             timeSlot,
             durationMinutes: data.durationMinutes,
+            packageType: (packageMinutes === 15 ? 'MIN_15' : packageMinutes === 20 ? 'MIN_20' : packageMinutes === 45 ? 'MIN_45' : packageMinutes === 60 ? 'MIN_60' : 'MIN_30') as any,
+            packageMinutes,
+            packagePrice: feeBreakdown.packagePrice || feeBreakdown.lawyerFee,
+            totalMinutesUsed: 0,
+            sessionActive: false,
             fee: feeBreakdown.lawyerFee,
             platformFee: feeBreakdown.platformFee,
             serviceCharge: feeBreakdown.serviceCharge,

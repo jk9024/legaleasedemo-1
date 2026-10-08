@@ -102,7 +102,7 @@ export function LawyerFilter({ filters, onChange, onReset }: LawyerFilterProps) 
       {/* Max Consultation Fee Slider */}
       <div>
         <div className="flex justify-between items-center mb-1 text-xs">
-          <label className="font-bold text-[#0B1F3A]">Max Hourly Fee</label>
+          <label className="font-bold text-[#0B1F3A]">Max Rate (per hour)</label>
           <span className="font-bold text-[#0D7A55]">₹{filters.maxFee}</span>
         </div>
         <input

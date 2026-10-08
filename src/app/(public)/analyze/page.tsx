@@ -323,7 +323,7 @@ export default function DocumentAnalyzerPage() {
                 href={`/book/${analysisResult.recommendedAdvocateId}`}
                 className="shrink-0 flex items-center justify-center gap-2 rounded-xl bg-[#C9A84C] text-[#0B1F3A] px-5 py-3 text-xs font-bold hover:bg-amber-400 transition"
               >
-                <span>Book Document Consultation (from ₹599)</span>
+                <span>Book Document Consultation (from ₹330)</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

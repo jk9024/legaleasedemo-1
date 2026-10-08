@@ -74,7 +74,7 @@ export function Footer() {
             <ul className="mt-3 space-y-2 text-sm">
               <li>
                 <Link href="/pricing" className="hover:text-white transition">
-                  Legal Shield Plans
+                  LexPlus & Pricing Plans
                 </Link>
               </li>
               <li>

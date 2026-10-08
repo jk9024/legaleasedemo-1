@@ -26,8 +26,10 @@ import {
   Loader2,
 } from 'lucide-react'
 import { calculateFees, FeeBreakdown } from '@/lib/utils/fees'
+import { STARTING_PACKAGES, calcPackagePrice } from '@/lib/utils/pricing'
 import { formatINR, formatPhoneNumber } from '@/lib/utils/formatters'
 import { LEGAL_CATEGORIES } from '@/lib/constants'
+import { loadRazorpayScript } from '@/lib/razorpay-client'
 
 interface LawyerInfo {
   id: string
@@ -70,12 +72,11 @@ function BookingWizard() {
   const [lawyer, setLawyer] = useState<LawyerInfo | null>(null)
   const [isLoadingLawyer, setIsLoadingLawyer] = useState(true)
 
-  // Step 1: Mode & Duration
+  // Step 1: Mode & Duration Packages
   const [consultType, setConsultType] = useState<'VIDEO' | 'PHONE' | 'INPERSON' | 'EMERGENCY'>('VIDEO')
-  const [durationMinutes, setDurationMinutes] = useState<number>(prefillType === '60min' ? 60 : 30)
-  const [pricingModel, setPricingModel] = useState<'PER_HOUR' | 'PER_MINUTE'>(
-    prefillType === 'perMinute' ? 'PER_MINUTE' : 'PER_HOUR'
-  )
+  const [selectedPackage, setSelectedPackage] = useState<string>('MIN_30')
+  const [durationMinutes, setDurationMinutes] = useState<number>(30)
+  const [pricingModel, setPricingModel] = useState<'PER_HOUR' | 'PER_MINUTE'>('PER_HOUR')
 
   // Step 2: Date & Slot
   const [selectedDate, setSelectedDate] = useState<string>(prefillDate)
@@ -144,22 +145,15 @@ function BookingWizard() {
 
   // Calculate Fee breakdown
   const calculateBookingFee = (): FeeBreakdown => {
-    const hourlyFee = lawyer?.hourlyFee || 599
-    const perMinuteFee = lawyer?.perMinuteFee || 12
+    const ratePerMinute = lawyer?.perMinuteFee || 11
+    const lawyerTier = (lawyer as unknown as { lawyerTier?: string })?.lawyerTier || 'standard'
+    const plan = applyShieldDiscount ? 'LEX_PLUS' : 'NONE'
 
-    let baseFee = hourlyFee
-    if (pricingModel === 'PER_MINUTE') {
-      baseFee = perMinuteFee * durationMinutes
-    } else if (durationMinutes === 30) {
-      baseFee = Math.round(hourlyFee * 0.6)
-    } else if (durationMinutes === 60) {
-      baseFee = hourlyFee
-    } else if (consultType === 'EMERGENCY') {
-      baseFee = 999
+    if (consultType === 'EMERGENCY') {
+      return calculateFees(33, 30, lawyerTier, plan)
     }
 
-    const plan = applyShieldDiscount ? 'LEGAL_SHIELD' : 'FREE'
-    return calculateFees(baseFee, 'lawyer', plan)
+    return calculateFees(ratePerMinute, durationMinutes, lawyerTier, plan)
   }
 
   const feeBreakdown = calculateBookingFee()
@@ -267,14 +261,16 @@ function BookingWizard() {
         throw new Error(orderData.error || 'Failed to initialize payment with gateway')
       }
 
-      const orderId = orderData.data?.orderId || `order_${bookingRef}`
-      const keyId = orderData.data?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+      const orderId = orderData.data?.orderId || `demo_order_${bookingRef}`
+      const keyId = (orderData.data?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim()
 
-      // 3. If Razorpay SDK is loaded and we have real order, trigger Checkout modal
+      // 3. Ensure Razorpay SDK is loaded
+      await loadRazorpayScript()
       const isRazorpayAvailable = typeof window !== 'undefined' && Boolean((window as unknown as { Razorpay: unknown }).Razorpay)
-      const isRealOrder = !orderId.startsWith('demo_order_') && keyId && !keyId.includes('YOUR_KEY')
+      const hasRealKey = Boolean(keyId && keyId.startsWith('rzp_') && !keyId.includes('YOUR_KEY') && !keyId.includes('demo'))
+      const hasRealOrder = Boolean(orderId && orderId.startsWith('order_'))
 
-      if (isRazorpayAvailable && isRealOrder) {
+      if (isRazorpayAvailable && hasRealKey && hasRealOrder) {
         interface RazorpaySuccessResponse {
           razorpay_payment_id: string
           razorpay_order_id?: string
@@ -450,137 +446,157 @@ function BookingWizard() {
           </div>
         )}
 
-        {/* ================= STEP 1: CONSULTATION MODE & DURATION ================= */}
+        {/* ================= STEP 1: CONSULTATION MODE & PACKAGE DURATION ================= */}
         {step === 1 && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
             <div>
               <h3 className="font-hero text-lg font-bold text-[#0B1F3A]">
-                Step 1: Choose Consultation Mode & Duration
+                Step 1: Choose Consultation Mode & Package
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Select your preferred consultation channel and scheduled duration.
+                Select your preferred consultation channel and package duration.
               </p>
             </div>
 
             {/* Mode Selector */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button
-                type="button"
-                onClick={() => setConsultType('VIDEO')}
-                className={`rounded-2xl p-4 text-left transition border ${
-                  consultType === 'VIDEO'
-                    ? 'border-[#0B1F3A] bg-[#0B1F3A]/5 ring-2 ring-[#0B1F3A]'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-[#0B1F3A]">
-                  <Video className="h-5 w-5 text-[#0B1F3A]" />
-                  <span className="font-bold text-sm">Google Meet Video</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  1080p encrypted video room with screen-sharing for document review.
-                </p>
-                <span className="mt-3 inline-block rounded-md bg-[#0D7A55]/10 px-2 py-0.5 text-[10px] font-bold text-[#0D7A55]">
-                  Recommended
-                </span>
-              </button>
+            <div>
+              <label className="block text-xs font-bold text-[#0B1F3A] mb-2.5">
+                1. Choose Consultation Mode
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setConsultType('VIDEO')}
+                  className={`rounded-2xl p-4 text-left transition border ${
+                    consultType === 'VIDEO'
+                      ? 'border-[#0B1F3A] bg-[#0B1F3A]/5 ring-2 ring-[#0B1F3A]'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-[#0B1F3A]">
+                    <Video className="h-5 w-5 text-[#0B1F3A]" />
+                    <span className="font-bold text-sm">🎥 Video Call</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Encrypted Google Meet video consultation with instant screen-sharing.
+                  </p>
+                  <span className="mt-3 inline-block rounded-md bg-[#0D7A55]/10 px-2 py-0.5 text-[10px] font-bold text-[#0D7A55]">
+                    Recommended
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setConsultType('PHONE')}
-                className={`rounded-2xl p-4 text-left transition border ${
-                  consultType === 'PHONE'
-                    ? 'border-[#0B1F3A] bg-[#0B1F3A]/5 ring-2 ring-[#0B1F3A]'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-[#0B1F3A]">
-                  <PhoneCall className="h-5 w-5 text-[#0B1F3A]" />
-                  <span className="font-bold text-sm">Direct Phone Call</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Direct audio call with the advocate on your verified WhatsApp/mobile.
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setConsultType('PHONE')}
+                  className={`rounded-2xl p-4 text-left transition border ${
+                    consultType === 'PHONE'
+                      ? 'border-[#0B1F3A] bg-[#0B1F3A]/5 ring-2 ring-[#0B1F3A]'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-[#0B1F3A]">
+                    <PhoneCall className="h-5 w-5 text-[#0B1F3A]" />
+                    <span className="font-bold text-sm">📞 Phone Call</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Direct audio consultation with the advocate on your verified phone.
+                  </p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setConsultType('INPERSON')}
-                className={`rounded-2xl p-4 text-left transition border ${
-                  consultType === 'INPERSON'
-                    ? 'border-[#0B1F3A] bg-[#0B1F3A]/5 ring-2 ring-[#0B1F3A]'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-[#0B1F3A]">
-                  <MapPin className="h-5 w-5 text-[#0B1F3A]" />
-                  <span className="font-bold text-sm">Chamber Visit</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Face-to-face consultation at the advocate's chamber near High Court.
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setConsultType('INPERSON')}
+                  className={`rounded-2xl p-4 text-left transition border ${
+                    consultType === 'INPERSON'
+                      ? 'border-[#0B1F3A] bg-[#0B1F3A]/5 ring-2 ring-[#0B1F3A]'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-[#0B1F3A]">
+                    <MapPin className="h-5 w-5 text-[#0B1F3A]" />
+                    <span className="font-bold text-sm">🏢 In-Person</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Face-to-face consultation at the advocate's chamber near High Court.
+                  </p>
+                </button>
+              </div>
             </div>
 
-            {/* Duration & Billing Model */}
+            {/* Package Duration Selector */}
             <div className="space-y-3 pt-2">
-              <label className="block text-xs font-bold text-[#0B1F3A]">
-                Select Duration
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDurationMinutes(30)
-                    setPricingModel('PER_HOUR')
-                  }}
-                  className={`rounded-xl p-3 text-left border transition ${
-                    durationMinutes === 30 && pricingModel === 'PER_HOUR'
-                      ? 'bg-[#0B1F3A] text-white border-[#0B1F3A]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <p className="font-bold text-xs">30 Minutes Consultation</p>
-                  <p className="text-[11px] opacity-80 mt-1">
-                    {formatINR(Math.round((lawyer?.hourlyFee || 599) * 0.6))} • Standard Advice
-                  </p>
-                </button>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#0B1F3A]">
+                  2. Choose Package Duration
+                </label>
+                <span className="text-xs text-slate-500 font-medium">
+                  Base Rate: {formatINR(lawyer?.perMinuteFee || 11)}/min
+                </span>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDurationMinutes(60)
-                    setPricingModel('PER_HOUR')
-                  }}
-                  className={`rounded-xl p-3 text-left border transition ${
-                    durationMinutes === 60 && pricingModel === 'PER_HOUR'
-                      ? 'bg-[#0B1F3A] text-white border-[#0B1F3A]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <p className="font-bold text-xs">60 Minutes Deep Dive</p>
-                  <p className="text-[11px] opacity-80 mt-1">
-                    {formatINR(lawyer?.hourlyFee || 599)} • Complete Case Review
-                  </p>
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {STARTING_PACKAGES.map((pkg) => {
+                  const isSelected = selectedPackage === pkg.key
+                  const ratePerMin = lawyer?.perMinuteFee || 11
+                  const price = calcPackagePrice(ratePerMin, pkg.minutes)
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDurationMinutes(15)
-                    setPricingModel('PER_MINUTE')
-                  }}
-                  className={`rounded-xl p-3 text-left border transition ${
-                    pricingModel === 'PER_MINUTE'
-                      ? 'bg-[#0B1F3A] text-white border-[#0B1F3A]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <p className="font-bold text-xs">Per-Minute Billing</p>
-                  <p className="text-[11px] opacity-80 mt-1">
-                    {formatINR(lawyer?.perMinuteFee || 12)}/min • Pay for exact minutes
+                  return (
+                    <button
+                      key={pkg.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPackage(pkg.key)
+                        setDurationMinutes(pkg.minutes)
+                      }}
+                      className={`relative rounded-2xl p-5 text-left border-2 transition flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white ring-2 ring-[#C9A84C] shadow-lg'
+                          : 'border-slate-200 bg-white hover:border-[#0B1F3A] text-slate-700 hover:shadow-sm'
+                      }`}
+                    >
+                      {pkg.badge && (
+                        <span
+                          className={`absolute -top-3 right-4 text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
+                            isSelected
+                              ? 'bg-[#C9A84C] text-[#0B1F3A]'
+                              : pkg.badge === 'POPULAR'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}
+                        >
+                          {pkg.badge}
+                        </span>
+                      )}
+                      <div>
+                        <p className={`font-hero font-bold text-base ${isSelected ? 'text-white' : 'text-[#0B1F3A]'}`}>
+                          {pkg.label}
+                        </p>
+                        <p className={`text-xs mt-1 ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {pkg.description}
+                        </p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-slate-100/20 flex items-center justify-between">
+                        <span className={`text-xs ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {formatINR(ratePerMin)}/min × {pkg.minutes}m
+                        </span>
+                        <p className={`text-lg font-extrabold ${isSelected ? 'text-[#C9A84C]' : 'text-[#0D7A55]'}`}>
+                          {formatINR(price)}
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* In-Call Extension Note */}
+              <div className="rounded-xl bg-blue-50/80 border border-blue-200/80 p-3.5 flex items-start gap-3 text-xs text-blue-950">
+                <span className="text-base leading-none mt-0.5">⏱️</span>
+                <div>
+                  <p className="font-bold text-blue-900">Need more time later during your consultation?</p>
+                  <p className="text-[11px] text-blue-700 mt-0.5">
+                    You can easily extend your call anytime (+15, +30, +45, or +60 min) with special discounts up to 50% off during the live session.
                   </p>
-                </button>
+                </div>
               </div>
             </div>
 
@@ -927,12 +943,12 @@ function BookingWizard() {
               </div>
             </div>
 
-            {/* Legal Shield Coupon Toggle */}
+            {/* LexPlus Coupon Toggle */}
             <div className="flex items-center justify-between p-3.5 rounded-xl border border-amber-200 bg-amber-50/50">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-600" />
                 <div>
-                  <p className="text-xs font-bold text-[#0B1F3A]">Legal Shield Membership</p>
+                  <p className="text-xs font-bold text-[#0B1F3A]">LexPlus Membership</p>
                   <p className="text-[11px] text-slate-500">Apply 20% discount on consultation fees</p>
                 </div>
               </div>
@@ -958,7 +974,7 @@ function BookingWizard() {
 
               {feeBreakdown.discount > 0 && (
                 <div className="flex justify-between text-[#0D7A55] font-semibold">
-                  <span>Legal Shield Member Discount (20%)</span>
+                  <span>LexPlus Member Discount (20%)</span>
                   <span>-{formatINR(feeBreakdown.discount)}</span>
                 </div>
               )}

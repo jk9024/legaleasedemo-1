@@ -15,10 +15,10 @@ export default function AdminRevenuePage() {
   }
 
   const commissionRules = [
-    { tier: 'Law Students', commission: '15%', note: 'Supports student legal apprenticeships' },
-    { tier: 'Consultations < ₹599', commission: '12%', note: 'High volume, low ticket rate' },
-    { tier: 'Consultations ₹599 - ₹1,500', commission: '10%', note: 'Standard advocate consultation' },
-    { tier: 'Consultations > ₹1,500', commission: '8%', note: 'Senior counsel premium tier' },
+    { tier: 'Law Student (₹2 - ₹5/min)', commission: '20%', note: 'Law student apprentice tier' },
+    { tier: 'Junior Advocate (₹5 - ₹12/min)', commission: '17%', note: 'Standard practicing advocate' },
+    { tier: 'Experienced Advocate (₹10 - ₹20/min)', commission: '15%', note: 'Established counsel tier' },
+    { tier: 'Senior Advocate (₹18 - ₹50/min)', commission: '12%', note: 'Senior high court counsel' },
   ]
 
   return (

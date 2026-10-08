@@ -85,22 +85,22 @@ export function LawyerCompareTool({ lawyers, onRemove }: LawyerCompareToolProps)
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 text-slate-700">
-          {/* Hourly Consultation Fee */}
+          {/* Rate per Minute */}
           <tr>
-            <td className="p-4 font-bold text-[#0B1F3A]">Hourly Fee (INR)</td>
+            <td className="p-4 font-bold text-[#0B1F3A]">Rate per Minute</td>
             {lawyers.map((l) => (
-              <td key={l.id} className="p-4 font-bold text-base text-[#0B1F3A]">
-                {formatINR(l.hourlyFee)} <span className="text-xs font-normal text-slate-500">/ hr</span>
+              <td key={l.id} className="p-4 font-bold text-base text-[#0D7A55]">
+                Rs.{l.perMinuteFee || Math.round(l.hourlyFee / 60) || 10}/min
               </td>
             ))}
           </tr>
 
-          {/* Per-Minute Rate */}
+          {/* Hourly Equivalent */}
           <tr>
-            <td className="p-4 font-bold text-[#0B1F3A]">Per-Minute Billing</td>
+            <td className="p-4 font-bold text-[#0B1F3A]">Hourly Equivalent</td>
             {lawyers.map((l) => (
-              <td key={l.id} className="p-4 font-semibold text-[#0D7A55]">
-                {formatINR(l.perMinuteFee)} / minute
+              <td key={l.id} className="p-4 font-semibold text-slate-700">
+                {formatINR(l.hourlyFee || (l.perMinuteFee || 10) * 60)} <span className="text-xs font-normal text-slate-500">/ hr</span>
               </td>
             ))}
           </tr>

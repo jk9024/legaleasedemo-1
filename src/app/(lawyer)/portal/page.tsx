@@ -191,8 +191,8 @@ export default function LawyerPortalOverview() {
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                When a client extends a consultation by 15 or 30 minutes, 33% discount is applied on the 1st
-                extension and 20% on the 2nd. Your account is configured to auto-accept extensions.
+                When a client extends a consultation by 15, 30, 45, or 60 minutes, 15% to 50% discount applies on the 1st
+                extension, 7% to 25% on the 2nd, and 0% on 3rd+. You earn 80% of the extension fee.
               </p>
             </div>
           </div>

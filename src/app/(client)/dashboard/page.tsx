@@ -121,7 +121,7 @@ export default function ClientDashboardOverview() {
             <span className="text-xs font-medium uppercase tracking-wider">Protection Plan</span>
             <ShieldCheck className="h-4 w-4 text-[#C9A84C]" />
           </div>
-          <p className="mt-3 text-base font-bold text-[#0B1F3A]">Legal Shield</p>
+          <p className="mt-3 text-base font-bold text-[#0B1F3A]">LexPlus</p>
           <p className="mt-1 text-[11px] text-[#0D7A55] font-medium">20% consultation discount active</p>
         </div>
       </div>

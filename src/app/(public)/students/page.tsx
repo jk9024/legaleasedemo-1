@@ -21,6 +21,7 @@ interface StudentData {
   college: string
   year: string
   specialties: string[]
+  ratePerMinute: number
   hourlyFee: number
   rating: number
   reviewCount: number
@@ -35,7 +36,8 @@ const STUDENTS: StudentData[] = [
     college: 'NALSAR University of Law, Hyderabad',
     year: '4th Year B.A. LL.B (Hons)',
     specialties: ['Right to Information (RTI)', 'Constitutional Law', 'Property Research'],
-    hourlyFee: 199,
+    ratePerMinute: 4,
+    hourlyFee: 240,
     rating: 4.9,
     reviewCount: 48,
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
@@ -47,7 +49,8 @@ const STUDENTS: StudentData[] = [
     college: 'University College of Law, Osmania University',
     year: 'Final Year LL.B',
     specialties: ['Commercial Contract Proofreading', 'Rental Agreements', 'Consumer Disputes'],
-    hourlyFee: 149,
+    ratePerMinute: 3,
+    hourlyFee: 180,
     rating: 4.8,
     reviewCount: 36,
     image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80',
@@ -182,9 +185,12 @@ export default function StudentsPage() {
 
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Hourly Rate</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-semibold">Per-Minute Rate</p>
                     <p className="font-extrabold text-sm text-[#0B1F3A]">
-                      {formatINR(student.hourlyFee)} / hr
+                      Rs.{student.ratePerMinute}/min{' '}
+                      <span className="text-[11px] font-normal text-slate-500">
+                        ({formatINR(student.hourlyFee)}/hr)
+                      </span>
                     </p>
                   </div>
 

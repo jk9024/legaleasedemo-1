@@ -30,8 +30,8 @@ const FEATURED_LAWYERS = [
     experienceYears: 12,
     rating: 4.9,
     reviewCount: 312,
-    feePerHour: 599,
-    feePerMinute: 12,
+    feePerHour: 660,
+    feePerMinute: 11,
     city: 'Hyderabad',
     languages: ['Telugu', 'Hindi', 'English'],
     verified: true,
@@ -46,8 +46,8 @@ const FEATURED_LAWYERS = [
     experienceYears: 8,
     rating: 4.8,
     reviewCount: 245,
-    feePerHour: 799,
-    feePerMinute: 15,
+    feePerHour: 840,
+    feePerMinute: 14,
     city: 'Hyderabad',
     languages: ['Telugu', 'Hindi', 'English', 'Urdu'],
     verified: true,
@@ -62,8 +62,8 @@ const FEATURED_LAWYERS = [
     experienceYears: 6,
     rating: 4.7,
     reviewCount: 189,
-    feePerHour: 499,
-    feePerMinute: 10,
+    feePerHour: 540,
+    feePerMinute: 9,
     city: 'Hyderabad',
     languages: ['Telugu', 'English'],
     verified: true,
@@ -274,12 +274,16 @@ export default function HomePage() {
 
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-slate-500">Starting at</p>
-                  <p className="text-base font-bold text-[#0B1F3A]">
-                    {formatINR(lawyer.feePerHour)}
-                    <span className="text-xs font-normal text-slate-500"> / hr</span>
+                  <p className="text-[10px] text-[#0D7A55] font-semibold">
+                    From {formatINR(lawyer.feePerMinute * 15)} for 15 min
                   </p>
-                  <p className="text-[10px] text-[#0D7A55]">or {formatINR(lawyer.feePerMinute)}/min</p>
+                  <p className="text-base font-extrabold text-[#0B1F3A]">
+                    {formatINR(lawyer.feePerMinute)}
+                    <span className="text-xs font-semibold text-slate-600">/min</span>
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    ({formatINR(lawyer.feePerHour)}/hr)
+                  </p>
                 </div>
                 <Link
                   href={`/book/${lawyer.id}`}
@@ -321,6 +325,141 @@ export default function HomePage() {
               <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{cat.desc}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* 4.5. Client Subscription Preview */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-md p-8 sm:p-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0D7A55] bg-emerald-50 px-2.5 py-1 rounded-md">
+                Subscription Plans
+              </span>
+              <h2 className="font-hero text-2xl sm:text-3xl font-bold text-[#0B1F3A] mt-2">
+                Predictable Legal Coverage for Everyone
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                From basic personal coverage to comprehensive business protection.
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0D7A55] hover:underline"
+            >
+              <span>View all plans & features</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* LexBasic - Rs.199 */}
+            <div className="rounded-2xl border border-slate-200 p-6 flex flex-col justify-between hover:border-slate-300 transition">
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Individual</span>
+                <h3 className="font-hero text-xl font-bold text-[#0B1F3A] mt-1">LexBasic</h3>
+                <div className="mt-4 mb-5">
+                  <span className="font-hero text-3xl font-extrabold text-[#0B1F3A]">₹199</span>
+                  <span className="text-xs text-slate-500"> / month</span>
+                </div>
+                <ul className="space-y-2.5 text-xs text-slate-600 mb-6">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>1 free 30-min consultation/month</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>10% off all bookings</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>Priority customer support</span>
+                  </li>
+                </ul>
+              </div>
+              <Link
+                href="/register?plan=LEX_BASIC"
+                className="w-full py-2.5 px-4 rounded-xl text-center text-xs font-bold bg-[#0B1F3A] text-white hover:bg-[#1a3a6b] transition block"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+
+            {/* LexPlus - Rs.399 (Most Popular) */}
+            <div className="rounded-2xl border-2 border-[#0D7A55] bg-emerald-50/20 p-6 flex flex-col justify-between shadow-lg relative">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0D7A55] px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                Most Popular
+              </span>
+              <div>
+                <span className="text-xs font-bold text-[#0D7A55] uppercase tracking-wider">Family (4 Members)</span>
+                <h3 className="font-hero text-xl font-bold text-[#0B1F3A] mt-1">LexPlus</h3>
+                <div className="mt-4 mb-5">
+                  <span className="font-hero text-3xl font-extrabold text-[#0B1F3A]">₹399</span>
+                  <span className="text-xs text-slate-500"> / month</span>
+                </div>
+                <ul className="space-y-2.5 text-xs text-slate-600 mb-6">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>2 free 30-min consultations/month</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>20% off all bookings</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>4 family members covered</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>Document vault 5GB & WhatsApp alerts</span>
+                  </li>
+                </ul>
+              </div>
+              <Link
+                href="/register?plan=LEX_PLUS"
+                className="w-full py-2.5 px-4 rounded-xl text-center text-xs font-bold bg-[#0D7A55] text-white hover:bg-[#09573c] transition shadow-md block"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+
+            {/* LexPro - Rs.999 */}
+            <div className="rounded-2xl border border-slate-200 p-6 flex flex-col justify-between hover:border-slate-300 transition">
+              <div>
+                <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">Business Pro</span>
+                <h3 className="font-hero text-xl font-bold text-[#0B1F3A] mt-1">LexPro</h3>
+                <div className="mt-4 mb-5">
+                  <span className="font-hero text-3xl font-extrabold text-[#0B1F3A]">₹999</span>
+                  <span className="text-xs text-slate-500"> / month</span>
+                </div>
+                <ul className="space-y-2.5 text-xs text-slate-600 mb-6">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>4 free 45-min consultations/month</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>25% off all bookings</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>Document drafting included (2/mo)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#0D7A55] shrink-0" />
+                    <span>Dedicated legal manager</span>
+                  </li>
+                </ul>
+              </div>
+              <Link
+                href="/register?plan=LEX_PRO"
+                className="w-full py-2.5 px-4 rounded-xl text-center text-xs font-bold bg-[#0B1F3A] text-white hover:bg-[#1a3a6b] transition block"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

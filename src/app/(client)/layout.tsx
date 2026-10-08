@@ -27,7 +27,7 @@ const CLIENT_NAV_ITEMS = [
   { name: 'Consultations', href: '/dashboard/bookings', icon: CalendarCheck },
   { name: 'Document Vault', href: '/dashboard/documents', icon: FolderLock },
   { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
-  { name: 'Legal Shield', href: '/dashboard/subscription', icon: ShieldAlert },
+  { name: 'LexPlus Subscription', href: '/dashboard/subscription', icon: ShieldAlert },
   { name: 'Account Settings', href: '/dashboard/settings', icon: Settings },
 ]
 

@@ -52,7 +52,7 @@ export default function RefundPolicyPage() {
       action: 'Raise dispute within 48 hours. Escrow release frozen pending investigation.',
     },
     {
-      scenario: 'Legal Shield Subscription Cancellation',
+      scenario: 'LexPlus Subscription Cancellation',
       description: 'Annual or monthly subscription cancelled within 7 days with zero consultations used.',
       refundType: '100% Prorated / Full',
       typeColor: 'text-[#0D7A55] bg-emerald-50 border-emerald-200',
