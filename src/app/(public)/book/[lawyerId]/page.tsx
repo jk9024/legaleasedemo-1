@@ -270,21 +270,20 @@ function BookingWizard() {
       const hasRealKey = Boolean(keyId && keyId.startsWith('rzp_') && !keyId.includes('YOUR_KEY') && !keyId.includes('demo'))
       const hasRealOrder = Boolean(orderId && orderId.startsWith('order_'))
 
-      if (isRazorpayAvailable && hasRealKey && hasRealOrder) {
+      if (isRazorpayAvailable && hasRealKey) {
         interface RazorpaySuccessResponse {
           razorpay_payment_id: string
           razorpay_order_id?: string
           razorpay_signature?: string
         }
 
-        const options = {
+        const options: Record<string, unknown> = {
           key: keyId,
           amount: Math.round(feeBreakdown.total * 100),
           currency: 'INR',
           name: 'LegalEase India',
           description: `Consultation with ${lawyer?.name || 'Advocate'} (100% Escrow)`,
           image: '/icons/icon-192x192.png',
-          order_id: orderId,
           prefill: {
             name: clientName,
             email: clientEmail,
@@ -318,6 +317,10 @@ function BookingWizard() {
               setIsProcessingPayment(false)
             },
           },
+        }
+
+        if (hasRealOrder) {
+          options.order_id = orderId
         }
 
         type RazorpayInstance = {

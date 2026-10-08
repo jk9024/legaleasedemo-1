@@ -105,14 +105,13 @@ export default function ExtensionPrompt({
       const hasRealKey = Boolean(effectiveKey && effectiveKey.startsWith('rzp_') && !effectiveKey.includes('placeholder') && !effectiveKey.includes('YOUR_KEY') && !effectiveKey.includes('demo'))
       const hasRealOrder = Boolean(orderId && orderId.startsWith('order_'))
 
-      if (hasRazorpay && hasRealKey && hasRealOrder) {
+      if (hasRazorpay && hasRealKey) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const RazorpayConstructor = (window as any).Razorpay
-        const rzp = new RazorpayConstructor({
+        const rzpOptions: Record<string, unknown> = {
           key: effectiveKey,
           amount: Math.round(discountedFee * 100),
           currency: 'INR',
-          order_id: orderId,
           name: 'LegalEase India',
           description: `+${minutes} min consultation extension with ${lawyerName}`,
           notes: { bookingId, minutes: minutes.toString() },
@@ -132,7 +131,13 @@ export default function ExtensionPrompt({
               setSelectedMins(null)
             }
           }
-        })
+        }
+
+        if (hasRealOrder) {
+          rzpOptions.order_id = orderId
+        }
+
+        const rzp = new RazorpayConstructor(rzpOptions)
         rzp.open()
       } else {
         // Fallback direct confirmation for development/testing or when order was simulated
